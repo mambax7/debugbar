@@ -4,7 +4,24 @@ All notable changes to the XOOPS DebugBar module are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
-## [1.3.0] - 2026-07-19
+## [1.3.1] - 2026-07-21
+
+### Security
+
+- Hardened read-only SQL classification by correctly terminating backtick-quoted identifiers and rejecting executable MySQL and MariaDB comments.
+
+### Fixed
+
+- Corrected the empty-Monolog-directory regression test so it exercises an existing empty directory while preserving access to the legacy log.
+- Applied the project coding style required by the PHP 8.2, 8.3, and 8.4 CI quality jobs.
+
+### Changed
+
+- Reduced SQL-tokenizer complexity and allocation overhead by extracting parsing helpers, consuming identifiers in one anchored match, and using the native line-comment scan.
+- Corrected the Scrutinizer analysis-node configuration and kept Rector modernization available separately from the merge-blocking QA gate.
+- Extended the GitHub Actions and Scrutinizer quality coverage to PHP 8.5.
+
+## [1.3.0] - 2026-07-20
 
 ### Security
 

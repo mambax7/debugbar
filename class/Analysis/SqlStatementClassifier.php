@@ -64,33 +64,14 @@ final class SqlStatementClassifier
         $length = strlen($sql);
         $depth = 0;
         $statementEnded = false;
+        $index = 0;
 
-        for ($index = 0; $index < $length;) {
-            $character = $sql[$index];
-
-            if (ctype_space($character)) {
-                ++$index;
-
-                continue;
+        while ($index < $length) {
+            $skipped = self::skipCommentOrSpace($sql, $index);
+            if ($skipped === null) {
+                return null;
             }
-
-            if ($character === '#') {
-                $index = self::skipLineComment($sql, $index + 1);
-
-                continue;
-            }
-            if ($character === '-' && ($sql[$index + 1] ?? '') === '-'
-                && (! isset($sql[$index + 2]) || ctype_space($sql[$index + 2]))) {
-                $index = self::skipLineComment($sql, $index + 2);
-
-                continue;
-            }
-            if ($character === '/' && ($sql[$index + 1] ?? '') === '*') {
-                $index = self::skipBlockComment($sql, $index + 2);
-                if ($index < 0) {
-                    return null;
-                }
-
+            if ($skipped) {
                 continue;
             }
 
@@ -98,48 +79,20 @@ final class SqlStatementClassifier
                 return null;
             }
 
-            if (in_array($character, ["'", '"', '`'], true)) {
-                $index = self::skipQuotedValue($sql, $index, $character);
-                if ($index < 0) {
-                    return null;
-                }
-
+            $character = $sql[$index];
+            $special = self::handleSpecialToken($sql, $index, $depth, $statementEnded, $character);
+            if ($special === null) {
+                return null;
+            }
+            if ($special) {
                 continue;
             }
 
-            if ($character === ';') {
-                if ($depth !== 0) {
-                    return null;
+            if (preg_match('/[A-Za-z_][A-Za-z0-9_$]*/A', $sql, $matches, 0, $index) === 1) {
+                if ($depth === 0) {
+                    $tokens[] = strtoupper($matches[0]);
                 }
-                $statementEnded = true;
-                ++$index;
-
-                continue;
-            }
-
-            if ($character === '(') {
-                ++$depth;
-                ++$index;
-
-                continue;
-            }
-            if ($character === ')') {
-                --$depth;
-                if ($depth < 0) {
-                    return null;
-                }
-                ++$index;
-
-                continue;
-            }
-
-            if ($depth === 0 && preg_match('/[A-Za-z_]/A', substr($sql, $index, 1)) === 1) {
-                $start = $index;
-                while ($index < $length
-                    && preg_match('/[A-Za-z0-9_$]/A', substr($sql, $index, 1)) === 1) {
-                    ++$index;
-                }
-                $tokens[] = strtoupper(substr($sql, $start, $index - $start));
+                $index += strlen($matches[0]);
 
                 continue;
             }
@@ -150,14 +103,104 @@ final class SqlStatementClassifier
         return $depth === 0 ? $tokens : null;
     }
 
-    private static function skipLineComment(string $sql, int $index): int
+    private static function skipCommentOrSpace(string $sql, int &$index): ?bool
     {
-        $length = strlen($sql);
-        while ($index < $length && ! in_array($sql[$index], ["\r", "\n"], true)) {
+        $character = $sql[$index];
+
+        if (ctype_space($character)) {
             ++$index;
+
+            return true;
         }
 
-        return $index;
+        if ($character === '#') {
+            $index = self::skipLineComment($sql, $index + 1);
+
+            return true;
+        }
+
+        if ($character === '-' && ($sql[$index + 1] ?? '') === '-'
+            && (! isset($sql[$index + 2]) || ctype_space($sql[$index + 2]))) {
+            $index = self::skipLineComment($sql, $index + 2);
+
+            return true;
+        }
+
+        if ($character === '/' && ($sql[$index + 1] ?? '') === '*') {
+            if (self::isExecutableBlockComment($sql, $index)) {
+                return null;
+            }
+
+            $nextIndex = self::skipBlockComment($sql, $index + 2);
+            if ($nextIndex < 0) {
+                return null;
+            }
+            $index = $nextIndex;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function isExecutableBlockComment(string $sql, int $index): bool
+    {
+        $marker = $sql[$index + 2] ?? '';
+
+        return $marker === '!'
+            || (strtoupper($marker) === 'M' && ($sql[$index + 3] ?? '') === '!');
+    }
+
+    private static function handleSpecialToken(
+        string $sql,
+        int &$index,
+        int &$depth,
+        bool &$statementEnded,
+        string $character
+    ): ?bool {
+        if ($character === ';') {
+            if ($depth !== 0) {
+                return null;
+            }
+            $statementEnded = true;
+            ++$index;
+
+            return true;
+        }
+
+        if ($character === '(') {
+            ++$depth;
+            ++$index;
+
+            return true;
+        }
+
+        if ($character === ')') {
+            --$depth;
+            if ($depth < 0) {
+                return null;
+            }
+            ++$index;
+
+            return true;
+        }
+
+        if (in_array($character, ["'", '"', '`'], true)) {
+            $nextIndex = self::skipQuotedValue($sql, $index, $character);
+            if ($nextIndex < 0) {
+                return null;
+            }
+            $index = $nextIndex;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function skipLineComment(string $sql, int $index): int
+    {
+        return $index + strcspn($sql, "\r\n", $index);
     }
 
     private static function skipBlockComment(string $sql, int $index): int
@@ -171,7 +214,7 @@ final class SqlStatementClassifier
     {
         $length = strlen($sql);
         for (++$index; $index < $length; ++$index) {
-            if ($sql[$index] === '\\') {
+            if ($quote !== '`' && $sql[$index] === '\\') {
                 ++$index;
 
                 continue;

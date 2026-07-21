@@ -23,12 +23,12 @@ namespace XoopsModules\Debugbar;
 
 defined('XOOPS_ROOT_PATH') || exit('Restricted access');
 
-use DebugBar\StandardDebugBar;
-use DebugBar\JavascriptRenderer;
+use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\ExceptionsCollector;
 use DebugBar\DataCollector\MessagesCollector;
-use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\TimeDataCollector;
+use DebugBar\JavascriptRenderer;
+use DebugBar\StandardDebugBar;
 use Psr\Log\LogLevel;
 use Xmf\Request;
 use XoopsModules\Debugbar\Analysis\DiagnosticSanitizer;
@@ -149,9 +149,10 @@ class DebugbarLogger
     public static function getInstance(): self
     {
         static $instance = null;
-        if (!$instance instanceof self) {
+        if (! $instance instanceof self) {
             $instance = new self();
         }
+
         return $instance;
     }
 
@@ -192,10 +193,11 @@ class DebugbarLogger
      */
     public function enable(): void
     {
-        if (!$this->debugbar) {
-            if (!class_exists('DebugBar\StandardDebugBar')) {
+        if (! $this->debugbar) {
+            if (! class_exists('DebugBar\StandardDebugBar')) {
                 return;
             }
+
             try {
                 $this->debugbar = new StandardDebugBar();
                 $renderer = $this->debugbar->getJavascriptRenderer();
@@ -235,6 +237,7 @@ class DebugbarLogger
                 }
             } catch (\Throwable $e) {
                 $this->debugbar = false;
+
                 return;
             }
         }
@@ -273,12 +276,12 @@ class DebugbarLogger
      */
     public function addToTheme(): void
     {
-        if (!$this->activated || $this->assetsAdded || !$this->debugbar instanceof StandardDebugBar) {
+        if (! $this->activated || $this->assetsAdded || ! $this->debugbar instanceof StandardDebugBar) {
             return;
         }
 
         $theme = $GLOBALS['xoTheme'] ?? null;
-        if (!$theme instanceof \xos_opal_Theme || !$this->renderer instanceof JavascriptRenderer) {
+        if (! $theme instanceof \xos_opal_Theme || ! $this->renderer instanceof JavascriptRenderer) {
             return;
         }
 
@@ -297,7 +300,7 @@ class DebugbarLogger
         };
 
         $cssAssets = array_filter($cssAssets, $filterFn);
-        $jsAssets  = array_filter($jsAssets, $filterFn);
+        $jsAssets = array_filter($jsAssets, $filterFn);
 
         foreach ($cssAssets as $css) {
             if ($css !== '') {
@@ -392,11 +395,11 @@ class DebugbarLogger
      */
     public function addSmarty(): void
     {
-        if (!$this->activated || !$this->debugbar instanceof StandardDebugBar) {
+        if (! $this->activated || ! $this->debugbar instanceof StandardDebugBar) {
             return;
         }
         $template = $GLOBALS['xoopsTpl'] ?? null;
-        if (!$template instanceof \XoopsTpl) {
+        if (! $template instanceof \XoopsTpl) {
             return;
         }
 
@@ -503,9 +506,10 @@ class DebugbarLogger
     /** Create the EXPLAIN token while the authenticated request session is open. */
     public function prepareExplainToken(): void
     {
-        if (!$this->activated || !isset($GLOBALS['xoopsSecurity']) || !is_object($GLOBALS['xoopsSecurity'])) {
+        if (! $this->activated || ! isset($GLOBALS['xoopsSecurity']) || ! is_object($GLOBALS['xoopsSecurity'])) {
             return;
         }
+
         try {
             // This method runs during authenticated bootstrap, before normal
             // page output. Reopen a closed session here, not during footer
@@ -534,6 +538,7 @@ class DebugbarLogger
                 return true;
             }
         }
+
         return false;
     }
 
@@ -554,6 +559,7 @@ class DebugbarLogger
         if ($secret === null) {
             return '';
         }
+
         return hash_hmac('sha256', $identity . '|' . $slot, $secret);
     }
 
@@ -585,7 +591,7 @@ class DebugbarLogger
     {
         unset($mail['body'], $mail['html']);
         $mail = $this->redact($mail);
-        $this->recordMessage('Mail', sprintf('%s → %s', $mail['subject'] ?? '(no subject)', $mail['to'] ?? ''), !empty($mail['success']) ? LogLevel::INFO : LogLevel::ERROR, $mail);
+        $this->recordMessage('Mail', sprintf('%s → %s', $mail['subject'] ?? '(no subject)', $mail['to'] ?? ''), ! empty($mail['success']) ? LogLevel::INFO : LogLevel::ERROR, $mail);
     }
 
     /** Add a searchable tag to the current request profile. */
@@ -602,7 +608,7 @@ class DebugbarLogger
     /** @param array<string, mixed> $context */
     private function recordMessage(string $channel, string $message, string $level, array $context = []): void
     {
-        if (!$this->activated || !$this->debugbar instanceof StandardDebugBar || !$this->debugbar->hasCollector($channel)) {
+        if (! $this->activated || ! $this->debugbar instanceof StandardDebugBar || ! $this->debugbar->hasCollector($channel)) {
             return;
         }
         $collector = $this->debugbar->getCollector($channel);
@@ -614,7 +620,7 @@ class DebugbarLogger
     /** Add the request-level collectors after all lifecycle events have fired. */
     private function addRuntimeCollectors(): void
     {
-        if (!$this->activated || !$this->debugbar instanceof StandardDebugBar) {
+        if (! $this->activated || ! $this->debugbar instanceof StandardDebugBar) {
             return;
         }
 
@@ -654,7 +660,11 @@ class DebugbarLogger
             foreach ($this->cacheStats as $backend => $stats) {
                 $cache[$backend] = sprintf(
                     'reads %d, writes %d, deletes %d, hits %d, misses %d',
-                    $stats['reads'], $stats['writes'], $stats['deletes'], $stats['hits'], $stats['misses']
+                    $stats['reads'],
+                    $stats['writes'],
+                    $stats['deletes'],
+                    $stats['hits'],
+                    $stats['misses']
                 );
             }
             $this->debugbar->addCollector(new ConfigCollector($cache, 'Cache summary'));
@@ -692,14 +702,16 @@ class DebugbarLogger
 
     private function messageCount(): int
     {
-        if (!$this->debugbar instanceof StandardDebugBar || !$this->debugbar->hasCollector('messages')) {
+        if (! $this->debugbar instanceof StandardDebugBar || ! $this->debugbar->hasCollector('messages')) {
             return 0;
         }
+
         try {
             $collector = $this->debugbar->getCollector('messages');
-            if (!$collector instanceof MessagesCollector) {
+            if (! $collector instanceof MessagesCollector) {
                 return 0;
             }
+
             return count($collector->collect()['messages'] ?? []);
         } catch (\Throwable $e) {
             return 0;
@@ -713,13 +725,14 @@ class DebugbarLogger
             return (string) $id;
         }
         static $generated;
-        if (!$generated) {
+        if (! $generated) {
             try {
                 $generated = bin2hex(random_bytes(8));
             } catch (\Throwable $e) {
                 $generated = uniqid('', true);
             }
         }
+
         return $generated;
     }
 
@@ -730,6 +743,7 @@ class DebugbarLogger
                 return trim(substr($header, strlen($name) + 1));
             }
         }
+
         return '';
     }
 
@@ -741,6 +755,7 @@ class DebugbarLogger
                 return implode(', ', $handlers);
             }
         }
+
         return (string) (ini_get('zlib.output_compression') ?: 'none');
     }
 
@@ -752,6 +767,7 @@ class DebugbarLogger
                 $headers[] = $header;
             }
         }
+
         return implode('; ', $headers);
     }
 
@@ -763,6 +779,7 @@ class DebugbarLogger
         $uri = Request::getString('REQUEST_URI', '/', 'SERVER');
         $method = Request::getString('REQUEST_METHOD', 'GET', 'SERVER');
         $url = $this->sanitizer()->sanitizeUrl($scheme . '://' . $host . $uri);
+
         return 'curl -X ' . escapeshellarg($method) . ' ' . escapeshellarg($url);
     }
 
@@ -789,7 +806,7 @@ class DebugbarLogger
      */
     public function addIncludedFiles(): void
     {
-        if (!$this->activated || !$this->debugbar instanceof StandardDebugBar) {
+        if (! $this->activated || ! $this->debugbar instanceof StandardDebugBar) {
             return;
         }
 
@@ -805,7 +822,7 @@ class DebugbarLogger
             } else {
                 $display = $file;
             }
-            $data[(string)($i + 1)] = $display;
+            $data[(string) ($i + 1)] = $display;
         }
 
         if (class_exists('DebugBar\DataCollector\ConfigCollector')) {
@@ -838,7 +855,7 @@ class DebugbarLogger
     {
         $debugbar = $this->debugbar;
         $renderer = $this->renderer;
-        if (!$this->activated || !$debugbar instanceof StandardDebugBar || !$renderer instanceof JavascriptRenderer) {
+        if (! $this->activated || ! $debugbar instanceof StandardDebugBar || ! $renderer instanceof JavascriptRenderer) {
             return;
         }
 
@@ -851,7 +868,7 @@ class DebugbarLogger
             $xoopsDB = \XoopsDatabaseFactory::getDatabaseConnection();
             $this->log(LogLevel::INFO, $xoopsDB->getServerVersion(), [
                 'channel' => 'Extra',
-                'name'    => sprintf(_MD_DEBUGBAR_DB_VERSION, 'MySQL'),
+                'name' => sprintf(_MD_DEBUGBAR_DB_VERSION, 'MySQL'),
             ]);
         } catch (\Throwable $e) {
             // ignore
@@ -865,14 +882,14 @@ class DebugbarLogger
             }
             $this->log(LogLevel::INFO, $querySummary, [
                 'channel' => 'Extra',
-                'name'    => _MD_DEBUGBAR_DATABASE_QUERIES,
+                'name' => _MD_DEBUGBAR_DATABASE_QUERIES,
             ]);
         }
 
         // Add memory usage
         $this->log(LogLevel::INFO, sprintf(_MD_DEBUGBAR_BYTES, memory_get_usage()), [
             'channel' => 'Extra',
-            'name'    => _MD_DEBUGBAR_MEMORY_USAGE,
+            'name' => _MD_DEBUGBAR_MEMORY_USAGE,
         ]);
 
         // Add included files tab (configurable)
@@ -885,7 +902,7 @@ class DebugbarLogger
         \XoopsModules\Debugbar\Profiler::getInstance()->finalize($this);
         $this->addRuntimeCollectors();
 
-        if (!$this->quietmode) {
+        if (! $this->quietmode) {
             $isAjax = Request::getHeader('X-Requested-With') === 'XMLHttpRequest';
             $output = '';
 
@@ -940,7 +957,7 @@ class DebugbarLogger
      */
     public function log(mixed $level, string $message, array $context = []): void
     {
-        if (!$this->activated || !$this->debugbar instanceof StandardDebugBar) {
+        if (! $this->activated || ! $this->debugbar instanceof StandardDebugBar) {
             return;
         }
 
@@ -954,15 +971,17 @@ class DebugbarLogger
                 case 'blocks':
                     $channel = 'Blocks';
                     $msg = $message . ': ';
-                    if (!empty($context['cached'])) {
+                    if (! empty($context['cached'])) {
                         $msg .= sprintf(_MD_DEBUGBAR_CACHED, (int) ($context['cachetime'] ?? 0));
                     } else {
                         $msg .= _MD_DEBUGBAR_NOT_CACHED;
                     }
+
                     break;
                 case 'deprecated':
                     $channel = 'Deprecated';
                     $msg = $message;
+
                     break;
                 case 'extra':
                     $channel = 'Extra';
@@ -970,11 +989,12 @@ class DebugbarLogger
                         ? (string) $context['name']
                         : '';
                     $msg = $name ? ($name . ': ' . $message) : $message;
+
                     break;
                 case 'queries':
                     $channel = 'Queries';
                     $context['is_query'] = true;
-                    $queryTime = !empty($context['query_time']) ? (float) $context['query_time'] : 0.0;
+                    $queryTime = ! empty($context['query_time']) ? (float) $context['query_time'] : 0.0;
                     $qt = $queryTime > 0 ? sprintf('%0.6f', $queryTime) : '';
                     $elapsed = microtime(true) - $this->requestStart;
                     if ($elapsed > 0 && $queryTime > 0) {
@@ -991,7 +1011,7 @@ class DebugbarLogger
                             'error' => $level === LogLevel::ERROR,
                         ];
                     }
-                    if (!isset($this->queryMap[$sqlKey])) {
+                    if (! isset($this->queryMap[$sqlKey])) {
                         $this->queryMap[$sqlKey] = 0;
                     }
                     $this->queryMap[$sqlKey]++;
@@ -1034,12 +1054,13 @@ class DebugbarLogger
                     break;
                 default:
                     $channel = 'messages';
+
                     break;
             }
         }
 
         // Fall back to 'messages' if collector doesn't exist
-        if (!$this->debugbar->hasCollector($channel)) {
+        if (! $this->debugbar->hasCollector($channel)) {
             $channel = 'messages';
         }
 
@@ -1106,6 +1127,7 @@ class DebugbarLogger
             E_USER_WARNING => 'E_USER_WARNING', E_USER_NOTICE => 'E_USER_NOTICE',
             E_DEPRECATED => 'E_DEPRECATED', E_USER_DEPRECATED => 'E_USER_DEPRECATED',
         ];
+
         return $types[$errno] ?? 'UNKNOWN (' . $errno . ')';
     }
 
@@ -1129,6 +1151,7 @@ class DebugbarLogger
         }
         /** @var array<string, string> $safeRequest */
         $safeRequest = $this->sanitizer()->sanitize($request);
+
         return $safeRequest;
     }
 
@@ -1136,6 +1159,7 @@ class DebugbarLogger
     public function whoopsSnapshot(): array
     {
         $request = $this->redact($this->requestContext());
+
         return [
             'Request ID' => $this->requestId(),
             'Method' => (string) ($request['method'] ?? ''),
@@ -1175,7 +1199,7 @@ class DebugbarLogger
     private static function xoopsLogger(): \XoopsLogger
     {
         $logger = \XoopsLogger::getInstance();
-        if (!$logger instanceof \XoopsLogger) {
+        if (! $logger instanceof \XoopsLogger) {
             throw new \RuntimeException('XOOPS logger is unavailable');
         }
 
@@ -1199,7 +1223,7 @@ class DebugbarLogger
     {
         $lines = [];
         foreach ($trace as $index => $frame) {
-            if (!is_array($frame)) {
+            if (! is_array($frame)) {
                 continue;
             }
             $location = isset($frame['file'])
@@ -1244,7 +1268,7 @@ class DebugbarLogger
             JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_SLASHES,
             4
         );
-        if (!is_string($encoded)) {
+        if (! is_string($encoded)) {
             return '[' . get_debug_type($argument) . ']';
         }
 

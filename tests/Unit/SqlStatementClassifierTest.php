@@ -23,6 +23,8 @@ final class SqlStatementClassifierTest extends TestCase
             'WITH RECURSIVE selected AS (SELECT 1 UNION ALL SELECT id + 1 FROM selected WHERE id < 3) SELECT * FROM selected',
             '/* INSERT is mentioned only in a comment */ SELECT 1',
             "SELECT 1; -- one statement with a terminal delimiter\n",
+            'SELECT 1 FROM `a\\` WHERE 1',
+            'SELECT `a\\` AS `col`, 1',
         ];
 
         foreach ($statements as $statement) {
@@ -40,7 +42,11 @@ final class SqlStatementClassifierTest extends TestCase
             'WITH selected AS (SELECT 1) REPLACE INTO audit_log SELECT * FROM selected',
             "SELECT * FROM users INTO OUTFILE '/tmp/users.txt'",
             "SELECT * FROM users INTO DUMPFILE '/tmp/users.bin'",
+            "SELECT * FROM users /*! INTO OUTFILE '/tmp/users.txt' */",
+            "SELECT * FROM users /*!80000 INTO OUTFILE '/tmp/users.txt' */",
+            "SELECT * FROM users /*M! INTO OUTFILE '/tmp/users.txt' */",
             'SELECT 1; DELETE FROM users',
+            'SELECT 1 FROM `x\\`; DELETE FROM users',
             "SELECT 'unterminated",
             'SELECT (1',
             '/* unterminated SELECT 1',

@@ -49,7 +49,6 @@
         "qa": [
             "@cs:check",
             "@analyse",
-            "@rector",
             "@test"
         ]
     }

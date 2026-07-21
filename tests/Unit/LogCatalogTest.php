@@ -21,7 +21,7 @@ final class LogCatalogTest extends TestCase
         self::assertNotFalse(file_put_contents($legacyFile, "legacy entry\n"));
 
         try {
-            $catalog = new LogCatalog('', $legacyFile);
+            $catalog = new LogCatalog($directory, $legacyFile);
             $files = $catalog->listFiles();
 
             self::assertCount(1, $files);
@@ -29,8 +29,12 @@ final class LogCatalogTest extends TestCase
             self::assertSame("legacy entry\n", $catalog->read('legacy'));
             self::assertNull($catalog->read('xoops.log'));
         } finally {
-            @unlink($legacyFile);
-            @rmdir($directory);
+            if (is_file($legacyFile)) {
+                self::assertTrue(unlink($legacyFile));
+            }
+            if (is_dir($directory)) {
+                self::assertTrue(rmdir($directory));
+            }
         }
     }
 }

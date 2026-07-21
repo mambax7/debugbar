@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * DebugBar Module - Install/Update callbacks
  *
@@ -54,7 +54,7 @@ function _debugbar_ensure_explain_secret(): bool
 
         return false;
     }
-    if (!$ready) {
+    if (! $ready) {
         trigger_error('DebugBar EXPLAIN signing key is unavailable; EXPLAIN actions remain disabled.', E_USER_WARNING);
     }
 
@@ -77,8 +77,12 @@ function _debugbar_create_profiles_table(): bool
         flags SMALLINT UNSIGNED NOT NULL DEFAULT 0, PRIMARY KEY (profile_id), KEY idx_created (created),
         KEY idx_url_created (url_hash, created), KEY idx_dirname_created (dirname, created)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
-    try { return false !== $db->exec($sql); } catch (\Throwable $e) {
+
+    try {
+        return false !== $db->exec($sql);
+    } catch (\Throwable $e) {
         trigger_error('DebugBar profiles table creation failed: ' . $e->getMessage(), E_USER_WARNING);
+
         return false;
     }
 }
@@ -100,7 +104,7 @@ function _debugbar_copy_assets()
     }
     $vendorBases[] = XOOPS_ROOT_PATH . '/xoops_lib/vendor';
     $vendorBases[] = XOOPS_ROOT_PATH . '/class/libraries/vendor';
-    $vendorBases   = array_unique($vendorBases);
+    $vendorBases = array_unique($vendorBases);
 
     // Check multiple possible resource layouts (newest first, then legacy paths)
     $resourceSuffixes = [
@@ -119,11 +123,12 @@ function _debugbar_copy_assets()
     foreach ($vendorPaths as $path) {
         if (is_dir($path)) {
             $srcDir = $path;
+
             break;
         }
     }
 
-    if (!$srcDir) {
+    if (! $srcDir) {
         $checkedDirs = [];
         foreach ($vendorPaths as $path) {
             $checkedDirs[] = basename(dirname($path, 4)) . '/…/' . basename($path);
@@ -139,8 +144,8 @@ function _debugbar_copy_assets()
 
     // Destination: modules/debugbar/assets/
     $destDir = XOOPS_ROOT_PATH . '/modules/debugbar/assets';
-    if (!is_dir($destDir)) {
-        if (!mkdir($destDir, 0755, true) && !is_dir($destDir)) {
+    if (! is_dir($destDir)) {
+        if (! mkdir($destDir, 0755, true) && ! is_dir($destDir)) {
             throw new \RuntimeException(sprintf(_MD_DEBUGBAR_ERR_DIR_CREATE, basename($destDir)));
         }
     }
@@ -201,7 +206,7 @@ function _debugbar_patch_vendor_assets(string $destDir): bool
             ],
             [
                 "    line-height: 1.2em;\n    font: 12px Menlo, Monaco, Consolas, monospace;",
-                "    font: 12px/1.2 Menlo, Monaco, Consolas, monospace;",
+                '    font: 12px/1.2 Menlo, Monaco, Consolas, monospace;',
             ],
         ],
         'vardumper.js' => [
@@ -241,16 +246,18 @@ function _debugbar_patch_vendor_assets(string $destDir): bool
     $success = true;
     foreach ($patches as $relativePath => $replacements) {
         $path = $destDir . '/' . $relativePath;
-        if (!is_file($path) || !is_readable($path)) {
+        if (! is_file($path) || ! is_readable($path)) {
             trigger_error('DebugBar asset patch skipped unreadable file: ' . $relativePath, E_USER_WARNING);
             $success = false;
+
             continue;
         }
 
         $contents = file_get_contents($path);
-        if (!is_string($contents)) {
+        if (! is_string($contents)) {
             trigger_error('DebugBar asset patch could not read file: ' . $relativePath, E_USER_WARNING);
             $success = false;
+
             continue;
         }
 
@@ -258,6 +265,7 @@ function _debugbar_patch_vendor_assets(string $destDir): bool
         foreach ($replacements as [$search, $replacement]) {
             if (str_contains($patched, $search)) {
                 $patched = str_replace($search, $replacement, $patched);
+
                 continue;
             }
 
@@ -288,17 +296,17 @@ function _debugbar_patch_vendor_assets(string $destDir): bool
  */
 function _debugbar_recursive_copy($src, $dest)
 {
-    if (!is_dir($src)) {
+    if (! is_dir($src)) {
         return false;
     }
-    if (!is_dir($dest)) {
-        if (!mkdir($dest, 0755, true) && !is_dir($dest)) {
+    if (! is_dir($dest)) {
+        if (! mkdir($dest, 0755, true) && ! is_dir($dest)) {
             throw new \RuntimeException(sprintf(_MD_DEBUGBAR_ERR_DIR_COPY, basename($dest)));
         }
     }
 
     $dir = opendir($src);
-    if (!$dir) {
+    if (! $dir) {
         return false;
     }
 
@@ -307,14 +315,14 @@ function _debugbar_recursive_copy($src, $dest)
         if ($file === '.' || $file === '..') {
             continue;
         }
-        $srcPath  = $src . '/' . $file;
+        $srcPath = $src . '/' . $file;
         $destPath = $dest . '/' . $file;
         if (is_dir($srcPath)) {
-            if (!_debugbar_recursive_copy($srcPath, $destPath)) {
+            if (! _debugbar_recursive_copy($srcPath, $destPath)) {
                 $success = false;
             }
         } else {
-            if (!copy($srcPath, $destPath)) {
+            if (! copy($srcPath, $destPath)) {
                 $success = false;
             }
         }
