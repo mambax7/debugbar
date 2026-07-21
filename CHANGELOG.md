@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Reduced SQL-tokenizer complexity and allocation overhead by extracting parsing helpers, consuming identifiers in one anchored match, and using the native line-comment scan.
 - Corrected the Scrutinizer analysis-node configuration and kept Rector modernization available separately from the merge-blocking QA gate.
-- Extended the GitHub Actions and Scrutinizer quality coverage to PHP 8.5.
+- Extended the GitHub Actions compatibility matrix and Scrutinizer test coverage to PHP 8.5, while keeping automated formatting checks on the minimum supported PHP version.
 
 ## [1.3.0] - 2026-07-20
 

@@ -23,7 +23,7 @@ build:
           version: '8.5'
       tests:
         override:
-          - composer qa
+          - composer test
 filter:
   dependency_paths:
     - XoopsCore27/*

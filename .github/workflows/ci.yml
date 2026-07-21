@@ -2,10 +2,10 @@
 # Profile: XoopsCore27 / PHP 8.2+
 # xoops-overlay:profile=core27
 #
-# Self-contained quality gate: runs `composer qa` (CS-Fixer check, PHPStan, and PHPUnit) on
-# the supported PHP matrix. Rector remains available as an explicit modernization command,
-# rather than blocking maintenance changes on unrelated legacy transformations. When the org
-# hosts a shared reusable workflow you can
+# Self-contained quality gate: runs coding standards and static analysis on the minimum PHP
+# version, then runs PHPUnit on the full supported PHP matrix. Rector remains available as an
+# explicit modernization command rather than blocking maintenance changes on unrelated legacy
+# transformations. When the org hosts a shared reusable workflow you can
 # replace this whole job with:
 #   uses: XoopsModules27x/.github/.github/workflows/module-ci.yml@v1
 name: CI
@@ -41,5 +41,13 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress
 
-      - name: Quality gate
-        run: composer qa
+      - name: Coding standards
+        if: matrix.php == '8.2'
+        run: composer cs:check
+
+      - name: Static analysis
+        if: matrix.php == '8.2'
+        run: composer analyse
+
+      - name: Unit tests
+        run: composer test
