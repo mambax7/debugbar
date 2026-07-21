@@ -19,7 +19,8 @@ final class LogCatalog
         $files = [];
         $directory = rtrim($this->monologDirectory, '/\\');
         if ($directory !== '' && is_dir($directory)) {
-            foreach (glob($directory . '/xoops*.log') ?: [] as $path) {
+            $paths = glob($directory . '/xoops*.log');
+            foreach ($paths !== false ? $paths : [] as $path) {
                 $name = basename($path);
                 if (! $this->isMonologName($name) || ! is_file($path)) {
                     continue;

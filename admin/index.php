@@ -179,8 +179,8 @@ if ($tracyControlAvailable) {
 // Render as a single HTML table inside one info box line
 $html = '<table style="border-collapse: collapse; width: auto;">';
 foreach ($statusRows as $row) {
-    $label = \htmlspecialchars((string) $row[0], ENT_QUOTES, 'UTF-8');
-    $value = \htmlspecialchars((string) $row[1], ENT_QUOTES, 'UTF-8');
+    $label = \htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8');
+    $value = \htmlspecialchars($row[1], ENT_QUOTES, 'UTF-8');
     $color = $row[2];
 
     $html .= '<tr>'

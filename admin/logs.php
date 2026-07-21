@@ -69,13 +69,14 @@ if ($requested !== '') {
                 if ($file !== '' && str_starts_with($file, $root . '/')) {
                     $file = substr($file, strlen($root) + 1);
                 }
+                $location = $file . $line;
                 echo '<tr><td><time class="debugbar-log-time" datetime="' . $esc($entry['timestamp']) . '" title="' . $esc($timestamp) . '">'
                     . '<strong>' . $esc($timestamp) . '</strong></time></td>'
                     . '<td><span class="debugbar-log-level debugbar-log-level--' . $esc($level) . '">' . $esc($level) . '</span></td>'
                     . '<td class="debugbar-log-description">' . $esc($entry['message'])
                     . ($error !== '' ? ' <span class="debugbar-log-error">' . $esc($error) . '</span>' : '') . '</td>'
                     . '<td><span class="debugbar-log-channel">' . $esc($entry['channel']) . '</span></td>'
-                    . '<td class="debugbar-log-location">' . $esc($file . $line ?: '—') . '</td><td>';
+                    . '<td class="debugbar-log-location">' . $esc($location !== '' ? $location : '—') . '</td><td>';
                 if ($entry['context'] !== [] || $entry['extra'] !== []) {
                     $detail = ['context' => $entry['context']];
                     if ($entry['extra'] !== []) {
@@ -83,7 +84,7 @@ if ($requested !== '') {
                     }
                     $json = json_encode($detail, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
                     echo '<details class="debugbar-log-details"><summary>' . $esc(_AM_DEBUGBAR_LOGS_CONTEXT) . '</summary>'
-                        . '<pre class="debugbar-log-context">' . $esc($json ?: '{}') . '</pre></details>';
+                        . '<pre class="debugbar-log-context">' . $esc($json !== false ? $json : '{}') . '</pre></details>';
                 } else {
                     echo '—';
                 }

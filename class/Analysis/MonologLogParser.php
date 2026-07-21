@@ -12,7 +12,8 @@ final class MonologLogParser
     public function parse(string $contents): array
     {
         $entries = [];
-        foreach (preg_split('/\R/', $contents) ?: [] as $line) {
+        $lines = preg_split('/\R/', $contents);
+        foreach ($lines !== false ? $lines : [] as $line) {
             if ($line === '') {
                 continue;
             }
