@@ -760,8 +760,11 @@ class DebugbarLogger
         }
 
         $compression = ini_get('zlib.output_compression');
+        if ($compression === false || $compression === '' || $compression === '0') {
+            return 'none';
+        }
 
-        return $compression !== false && $compression !== '' ? $compression : 'none';
+        return $compression;
     }
 
     private function cacheHeaders(): string
