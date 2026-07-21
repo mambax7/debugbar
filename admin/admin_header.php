@@ -21,6 +21,7 @@ use Xmf\Module\Admin;
 use XoopsModules\Debugbar\{
     Helper
 };
+
 /** @var Admin $adminObject */
 /** @var Helper $helper */
 

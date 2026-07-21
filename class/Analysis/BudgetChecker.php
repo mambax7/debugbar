@@ -58,6 +58,7 @@ final class BudgetChecker
                 $result[] = $name;
             }
         }
+
         return $result;
     }
 }
