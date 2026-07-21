@@ -124,9 +124,9 @@ final class ExplainSecretStore
     }
 
     /**
-     * @template TResult
-     * @param callable(): TResult $operation
-     * @return TResult
+     * @phpstan-template TResult
+     * @phpstan-param callable(): TResult $operation
+     * @phpstan-return TResult
      * @phpstan-impure
      */
     private function withoutWarnings(callable $operation): mixed

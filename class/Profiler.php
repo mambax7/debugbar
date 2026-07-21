@@ -134,6 +134,7 @@ final class Profiler
     /** @return array<array-key, mixed> */
     private function safeHeaders(): array
     {
+        /** @var array<array-key, mixed> $headers */
         $headers = function_exists('getallheaders') ? getallheaders() : [];
 
         return $this->sanitizer()->sanitizeHeaders($headers);
