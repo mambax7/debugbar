@@ -690,8 +690,8 @@
 
                             const td2 = document.createElement('td');
                             td2.classList.add(csscls('value'));
-                            if (contextJsonData[key]) {
-                                PhpDebugBar.Widgets.renderValueInto(td2, contextJsonData[key]);
+                            if (Object.prototype.hasOwnProperty.call(contextJsonData, key)) {
+                                PhpDebugBar.Widgets.renderSafeValueInto(td2, contextJsonData[key]);
                             } else {
                                 td2.textContent = value.context[key];
                             }

@@ -27,6 +27,7 @@ use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\ExceptionsCollector;
 use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\TimeDataCollector;
+use DebugBar\DataFormatter\JsonDataFormatter;
 use DebugBar\JavascriptRenderer;
 use DebugBar\StandardDebugBar;
 use Psr\Log\LogLevel;
@@ -203,6 +204,7 @@ class DebugbarLogger
                 $renderer = $this->debugbar->getJavascriptRenderer();
                 $this->renderer = $renderer;
                 $renderer->setUseDistFiles(false);
+                $renderer->addAssets(['vardumper.css'], ['vardumper.js']);
 
                 // Add custom collectors for XOOPS channels
                 $this->debugbar->addCollector(new MessagesCollector('Deprecated'));
@@ -212,6 +214,15 @@ class DebugbarLogger
                 $this->debugbar->addCollector(new MessagesCollector('Cache'));
                 $this->debugbar->addCollector(new MessagesCollector('HTTP'));
                 $this->debugbar->addCollector(new MessagesCollector('Mail'));
+
+                // Render structured message context client-side. This avoids
+                // embedding HTML dumps while preserving safe, expandable values.
+                $formatter = new JsonDataFormatter();
+                foreach ($this->debugbar->getCollectors() as $collector) {
+                    if ($collector instanceof MessagesCollector) {
+                        $collector->setDataFormatter($formatter);
+                    }
+                }
 
                 // Preserve source context for diagnostic messages.
                 foreach (['messages', 'Deprecated'] as $collectorName) {
